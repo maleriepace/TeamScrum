@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Socket.IO chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font: 13px Helvetica, Arial;
+        }
+    </style>
+</head>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+    $(function () {
+        createCards();
+
+        var socket = io();
+        $('form#setName').submit(function () {
+            var name = $('#name').val(),
+                team = $('#team').val();
+            addUserToTable(name);
+            socket.emit('add user', name, team);
+            $('#name').val('');
+            $('#team').val('');
+            return false;
+        });
+        socket.on('user connected', function (name) {
+            addUserToTable(name);
+        });
+        socket.on('card selected', function (name, card) {
+            $('#users tr').each(function () {
+                if ($($(this).children()[0]).text() === name) {
+                    $($(this).children()[1]).text(card);
+                }
+            });
+        });
+
+        function addUserToTable(name) {
+            $('#users').append($('<tr>').append($('<td>').text(name)).append("<td>"));
+        }
+
+        function createCards() {
+            var cards = ["0", "1/2", "1", "2", "3", "5", "8", "13", "20", "40", "100", "Inf", "?", "Cof"];
+            var numPerRow = 4;
+            for (var r = 0; r < Math.ceil(cards.length / numPerRow); r++) {
+                $('#cards').append($('<tr>'));
+                var row = $('#cards tr:last');
+                for (var j = 0; j < 4; j++) {
+                    var index = (r * numPerRow) + j;
+                    if (index >= cards.length) {
+                        break;
+                    }
+                    var button = $('<button>').text(cards[index]);
+                    $(row).append($('<td>').append(button));
+                    button.click(function (e) {
+                        socket.emit('card selected', $(this).text());
+                    })
+                }
+            }
+        }
+    });
+</script>
+
+<body>
+    <table>
+        <tr>
+            <td>
+                <form id="setName">
+                    <input id="name" autocomplete="off" />
+                    <input id="team" autocomplete="off" />
+                    <button>Send</button>
+                </form>
+            </td>
+            <td>
+                <table id="users"></table>
+            </td>
+        </tr>
+        <tr>
+            <table id="cards">
+            </table>
+        </tr>
+    </table>
+</body>
+
+</html>
